@@ -1,2 +1,2 @@
-# sparkle
+# Sparkle
 Spark Related Projects
