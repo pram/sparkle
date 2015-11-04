@@ -1,6 +1,6 @@
 import AssemblyKeys._
 
-name := "thinkdvr-classifier"
+name := "sparkle"
 
 version := "1.0"
 
