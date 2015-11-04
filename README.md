@@ -5,8 +5,11 @@ Spark Related Projects
 
    sbt clean package
    
-## To run application
+## To run applications
 
+### Wordcount
+
+    spark-submit --class com.naughtyzombie.sparkle.WordCount target/scala-2.10/sparkle_2.10-1.0.jar README.md target/wordcounts
 
 
 TODO  
