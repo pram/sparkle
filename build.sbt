@@ -1,5 +1,10 @@
 import AssemblyKeys._
 
+import sys.process._
+import java.net.URL
+import java.io.File
+
+
 name := "sparkle"
 
 version := "1.0"
@@ -37,8 +42,17 @@ mergeStrategy in assembly := {
   case _                                                   => MergeStrategy.first
 }
 
-val printTask = TaskKey[Unit]("print")
+lazy val downloadRecipeFile = taskKey[Unit]("Download the recipe archive and extract to /input")
 
-printTask := {
-  println("!Print Info!")
+downloadRecipeFile := {
+  if(java.nio.file.Files.notExists(new File("input","recipeitems-latest.json").toPath())) {
+    println("Downloading File")
+    new File("input").mkdir()
+    new File("input").listFiles().foreach{ file => file.delete()}
+    IO.download(new URL("http://openrecipes.s3.amazonaws.com/recipeitems-latest.json.gz"), new File("input","recipeitems-latest.json.gz"))
+    println("Extracting File")
+    IO.gunzip(new File("input","recipeitems-latest.json.gz"), new File("input","recipeitems-latest.json"))
+  } else {
+    println("File already downloaded")
+  }
 }
