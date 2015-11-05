@@ -36,3 +36,9 @@ mergeStrategy in assembly := {
   case "reference.conf"                                    => MergeStrategy.concat
   case _                                                   => MergeStrategy.first
 }
+
+val printTask = TaskKey[Unit]("print")
+
+printTask := {
+  println("!Print Info!")
+}
