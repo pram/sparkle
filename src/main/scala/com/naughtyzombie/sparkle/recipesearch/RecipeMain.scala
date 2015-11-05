@@ -23,7 +23,7 @@ object RecipeMain {
     val inputFile = args(1)
     val outputFile = args(2)
 
-    val sc = new SparkContext(master, "RecipeMain",System.getenv("SPARK_HOME"))
+    val sc = new SparkContext(master, "RecipeMain", System.getenv("SPARK_HOME"))
 
     val input = sc.textFile(inputFile)
 
@@ -40,5 +40,11 @@ object RecipeMain {
         }
       })
     }, true)
+
+    result.filter(_.name.toLowerCase.contains("chicken")).mapPartitions(records => {
+      val mapper = new ObjectMapper with ScalaObjectMapper
+      mapper.registerModule(DefaultScalaModule)
+      records.map(mapper.writeValueAsString(_))
+    }).saveAsTextFile(outputFile)
   }
 }

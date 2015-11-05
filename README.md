@@ -20,6 +20,10 @@ running on the server. Upload files to server
 To download the source file
 
     sbt downloadRecipeFile
+    
+To run recipe search
+
+    spark-submit --class com.naughtyzombie.sparkle.recipesearch.RecipeMain target/scala-2.10/sparkle_2.10-1.0.jar local input/recipeitems-latest.json output/chicken.txt
 
 
 TODO
