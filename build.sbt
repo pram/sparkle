@@ -12,6 +12,7 @@ version := "1.0"
 scalaVersion := "2.10.4"
 
 val sparkVersion: String = "1.4.0"
+val slf4jVersion: String = "1.7.12"
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion % "provided"
 libraryDependencies += "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided"
@@ -21,6 +22,9 @@ libraryDependencies += "org.apache.spark" %% "spark-streaming-twitter" % sparkVe
 libraryDependencies += "com.google.code.gson" % "gson" % "2.3"
 libraryDependencies += "org.twitter4j" % "twitter4j-core" % "3.0.3"
 libraryDependencies += "commons-cli" % "commons-cli" % "1.2"
+libraryDependencies += "org.slf4j" % "slf4j-api" % slf4jVersion
+libraryDependencies += "org.slf4j" % "log4j-over-slf4j" % slf4jVersion
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.3"
 
 resolvers += "Akka Repository" at "http://repo.akka.io/releases/"
 
