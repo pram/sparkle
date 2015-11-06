@@ -27,10 +27,10 @@ To run recipe search
 
 
 TODO
-Download recipe file. Write a separate spark job to ingest file
-Stream recipe file. Adapt spark job to ingest file from streaming source.
-Add machine learning to look for certain types of files
-?SparkSQL usage?
-?Create Graph of Recipes?
-Lookup how to connect client to remote cluster  
-setting up remote yarn client - might need to run Cloudera Manager  
+Download recipe file. Write a separate spark job to ingest file  
+Stream recipe file. Adapt spark job to ingest file from streaming source.  
+Add machine learning to look for certain types of files  
+?SparkSQL usage?  
+?Create Graph of Recipes?  
+Lookup how to connect client to remote cluster    
+setting up remote yarn client - might need to run Cloudera Manager    
