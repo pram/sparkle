@@ -26,7 +26,7 @@ To run recipe search
     spark-submit --class com.naughtyzombie.sparkle.recipesearch.RecipeMain target/scala-2.10/sparkle_2.10-1.0.jar local input/recipeitems-latest.json output/chicken.txt
 
 
-TODO
+TODO  
 Download recipe file. Write a separate spark job to ingest file  
 Stream recipe file. Adapt spark job to ingest file from streaming source.  
 Add machine learning to look for certain types of files  
