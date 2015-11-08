@@ -1,6 +1,6 @@
 package com.naughtyzombie.sparkle.recipesearch
 
-import com.naughtyzombie.sparkle.recipesearch.model.Recipe
+import com.naughtyzombie.sparkle.recipesearch.model.SourceRecipe
 import org.apache.spark._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
@@ -38,7 +38,7 @@ object RecipeMain {
 
       records.flatMap(record => {
         try {
-          Some(mapper.readValue(record, classOf[Recipe]))
+          Some(mapper.readValue(record, classOf[SourceRecipe]))
         } catch {
           case e: Exception => None
         }
