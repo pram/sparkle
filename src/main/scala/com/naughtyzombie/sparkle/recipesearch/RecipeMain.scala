@@ -8,6 +8,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.DeserializationFeature
 import org.slf4j.LoggerFactory
 
+import org.json4s.JsonDSL._
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
+
 /**
   * Created by pram on 05/11/2015.
   */
@@ -27,7 +31,7 @@ object RecipeMain {
 
     val input = sc.textFile(inputFile)
 
-    val result = input.mapPartitions(records => {
+   val result = input.mapPartitions(records => {
       val mapper = new ObjectMapper with ScalaObjectMapper
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
       mapper.registerModule(DefaultScalaModule)
