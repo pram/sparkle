@@ -6,11 +6,8 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.DeserializationFeature
+import org.apache.spark.sql.SQLContext
 import org.slf4j.LoggerFactory
-
-import org.json4s.JsonDSL._
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
 
 /**
   * Created by pram on 05/11/2015.
@@ -20,7 +17,7 @@ object RecipeMain {
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
       logger.error(s"Usage: RecipeMain sparkmaster inputfile outputfile")
-      exit(1)
+      sys.exit(1)
     }
 
     val master = args(0)
@@ -29,9 +26,22 @@ object RecipeMain {
 
     val sc = new SparkContext(master, "RecipeMain", System.getenv("SPARK_HOME"))
 
-    val input = sc.textFile(inputFile)
+//    val input = sc.textFile(inputFile)
 
-   val result = input.mapPartitions(records => {
+    val sqlContext = new SQLContext(sc)
+
+    val recipesSource = sqlContext.read.json(inputFile)
+
+    recipesSource.registerTempTable("recipesSource")
+
+    val x = sqlContext.sql("select count(*) from recipesSource")
+    val y = sqlContext.sql("select count(*) from recipesSource where description like '%rice%'")
+
+    println(x.collectAsList())
+    println(y.collectAsList())
+
+
+   /*val result = input.mapPartitions(records => {
       val mapper = new ObjectMapper with ScalaObjectMapper
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
       mapper.registerModule(DefaultScalaModule)
@@ -49,6 +59,6 @@ object RecipeMain {
       val mapper = new ObjectMapper with ScalaObjectMapper
       mapper.registerModule(DefaultScalaModule)
       records.map(mapper.writeValueAsString(_))
-    }).saveAsTextFile(outputFile)
+    }).saveAsTextFile(outputFile)*/
   }
 }
