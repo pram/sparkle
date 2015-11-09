@@ -38,6 +38,7 @@ TODO
 Download recipe file. Write a separate spark job to ingest file  
 Stream recipe file. Adapt spark job to ingest file from streaming source.  
 Add machine learning to look for certain types of files  
+Spark JSON Parsing  
 ?SparkSQL usage?  
 ?Create Graph of Recipes?  
 Lookup how to connect client to remote cluster    
