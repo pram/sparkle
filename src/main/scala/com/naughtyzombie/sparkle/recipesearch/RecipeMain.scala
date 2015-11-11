@@ -26,8 +26,6 @@ object RecipeMain {
 
     val sc = new SparkContext(master, "RecipeMain", System.getenv("SPARK_HOME"))
 
-//    val input = sc.textFile(inputFile)
-
     val sqlContext = new SQLContext(sc)
 
     val recipesSource = sqlContext.read.json(inputFile)
@@ -39,26 +37,5 @@ object RecipeMain {
 
     println(x.collectAsList())
     println(y.collectAsList())
-
-
-   /*val result = input.mapPartitions(records => {
-      val mapper = new ObjectMapper with ScalaObjectMapper
-      mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      mapper.registerModule(DefaultScalaModule)
-
-      records.flatMap(record => {
-        try {
-          Some(mapper.readValue(record, classOf[SourceRecipe]))
-        } catch {
-          case e: Exception => None
-        }
-      })
-    }, true)
-
-    result.filter(_.name.toLowerCase.contains("chicken")).mapPartitions(records => {
-      val mapper = new ObjectMapper with ScalaObjectMapper
-      mapper.registerModule(DefaultScalaModule)
-      records.map(mapper.writeValueAsString(_))
-    }).saveAsTextFile(outputFile)*/
   }
 }
