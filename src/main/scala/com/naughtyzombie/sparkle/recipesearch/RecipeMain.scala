@@ -1,8 +1,12 @@
 package com.naughtyzombie.sparkle.recipesearch
 
+import java.io.File
+
 import com.google.gson.{GsonBuilder, JsonParser}
 import org.apache.spark._
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
 import org.slf4j.LoggerFactory
 
 /**
@@ -37,12 +41,46 @@ object RecipeMain {
     val jsonParser = new JsonParser()
     val gson = new GsonBuilder().setPrettyPrinting().create()
 
-    val recipes: DataFrame = sqlContext.sql("select * from recipesSource where description like '%chicken%'")
+//    val allRecipeDetails: DataFrame = sqlContext.sql("select * from recipesSource")
 
     /*for(recipe <- recipes.take(5)) {
       println(recipe)
     }*/
 
 //    recipesSource.printSchema()
+
+    val modelRecipeNames = sqlContext.sql("select name from recipesSource where name like '%chicken%'").map(_.toString)
+
+    val vectors = modelRecipeNames.map(Utils.featurize).cache()
+
+    vectors.count()
+
+    val maxIterations: Int = 50
+    val model = KMeans.train(vectors,5,maxIterations)
+
+    val outFile: String = "output/out.txt"
+    new File(outFile).delete()
+    sc.makeRDD(model.clusterCenters, maxIterations).saveAsObjectFile(outFile)
+
+    /*val someRecipes = modelRecipeNames.take(maxIterations)*/
+/*
+    for (i <- 0 until maxIterations) {
+      someRecipes.foreach{ t =>
+        if (model.predict(Utils.featurize(t)) == i) {
+          println(t)
+        }
+
+      }
+    }
+*/
+
+//    val collect: Array[Vector] = sc.objectFile[Vector](outFile.toString).collect()
+
+    val allRecipeNames = sqlContext.sql("select name from recipesSource").map(_.toString)
+    val filteredRecipes: RDD[String] = allRecipeNames.filter { t => model.predict(Utils.featurize(t)) == 9}
+    for (recipe <- filteredRecipes.take(10)) {
+      println(recipe)
+    }
+
   }
 }
