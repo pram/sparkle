@@ -1,7 +1,8 @@
 package com.naughtyzombie.sparkle.recipesearch
 
+import com.google.gson.{GsonBuilder, JsonParser}
 import org.apache.spark._
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.slf4j.LoggerFactory
 
 /**
@@ -27,10 +28,21 @@ object RecipeMain {
 
     recipesSource.registerTempTable("recipesSource")
 
-    val x = sqlContext.sql("select count(*) from recipesSource")
+    /*val x = sqlContext.sql("select count(*) from recipesSource")
     val y = sqlContext.sql("select count(*) from recipesSource where description like '%rice%'")
 
     println(x.collectAsList())
-    println(y.collectAsList())
+    println(y.collectAsList())*/
+
+    val jsonParser = new JsonParser()
+    val gson = new GsonBuilder().setPrettyPrinting().create()
+
+    val recipes: DataFrame = sqlContext.sql("select * from recipesSource where description like '%chicken%'")
+
+    /*for(recipe <- recipes.take(5)) {
+      println(recipe)
+    }*/
+
+//    recipesSource.printSchema()
   }
 }
