@@ -32,22 +32,8 @@ object RecipeMain {
 
     recipesSource.registerTempTable("recipesSource")
 
-    /*val x = sqlContext.sql("select count(*) from recipesSource")
-    val y = sqlContext.sql("select count(*) from recipesSource where description like '%rice%'")
-
-    println(x.collectAsList())
-    println(y.collectAsList())*/
-
     val jsonParser = new JsonParser()
     val gson = new GsonBuilder().setPrettyPrinting().create()
-
-//    val allRecipeDetails: DataFrame = sqlContext.sql("select * from recipesSource")
-
-    /*for(recipe <- recipes.take(5)) {
-      println(recipe)
-    }*/
-
-//    recipesSource.printSchema()
 
     val modelRecipeNames = sqlContext.sql("select name from recipesSource where name like '%chicken%'").map(_.toString)
 
@@ -61,20 +47,6 @@ object RecipeMain {
     val outFile: String = "output/out.txt"
     new File(outFile).delete()
     sc.makeRDD(model.clusterCenters, maxIterations).saveAsObjectFile(outFile)
-
-    /*val someRecipes = modelRecipeNames.take(maxIterations)*/
-/*
-    for (i <- 0 until maxIterations) {
-      someRecipes.foreach{ t =>
-        if (model.predict(Utils.featurize(t)) == i) {
-          println(t)
-        }
-
-      }
-    }
-*/
-
-//    val collect: Array[Vector] = sc.objectFile[Vector](outFile.toString).collect()
 
     val allRecipeNames = sqlContext.sql("select name from recipesSource").map(_.toString)
     val filteredRecipes: RDD[String] = allRecipeNames.filter { t => model.predict(Utils.featurize(t)) == 9}
