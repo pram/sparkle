@@ -15,6 +15,10 @@ Spark Related Projects
 running on the server. Upload files to server
     
     spark-submit --class com.naughtyzombie.sparkle.WordCount --master spark://192.168.0.43:7077 --deploy-mode cluster target/scala-2.10/sparkle_2.10-1.0.jar /user/guest/README.md /user/guest/READMEOUT
+
+running using yarn
+
+    spark-submit --class com.naughtyzombie.sparkle.EstimatePi --master yarn-client --num-executors 3 --driver-memory 512m --executor-memory 512m --executor-cores 1 target/scala-2.10/sparkle_2.10-1.0.jar 
     
 ### Recipesearch
 

@@ -15,16 +15,16 @@ val sparkVersion: String = "1.4.0"
 val slf4jVersion: String = "1.7.12"
 
 //For building release
-/*libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion % "provided"
 libraryDependencies += "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided"
 libraryDependencies += "org.apache.spark" %% "spark-sql" % sparkVersion % "provided"
-libraryDependencies += "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided"*/
+libraryDependencies += "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided"
 
 //For running in ide
-libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion
+/*libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion
 libraryDependencies += "org.apache.spark" %% "spark-mllib" % sparkVersion
 libraryDependencies += "org.apache.spark" %% "spark-sql" % sparkVersion
-libraryDependencies += "org.apache.spark" %% "spark-streaming" % sparkVersion
+libraryDependencies += "org.apache.spark" %% "spark-streaming" % sparkVersion*/
 
 libraryDependencies += "org.apache.spark" %% "spark-streaming-twitter" % sparkVersion
 libraryDependencies += "com.google.code.gson" % "gson" % "2.3"
