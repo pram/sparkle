@@ -4,7 +4,7 @@ Spark Related Projects
 
 ## To build project
 
-   sbt clean package
+`sbt clean package`
    
 ## To run applications
 
