@@ -36,6 +36,10 @@ For reference, some line samples
 To run recipe search
 
     spark-submit --class com.naughtyzombie.sparkle.recipesearch.RecipeMain target/scala-2.10/sparkle_2.10-1.0.jar local input/recipeitems-latest.json output/chicken.txt
+    
+Music Recommender
+
+Audioscrobbler datafile downloaded from [here](http://www.iro.umontreal.ca/~lisa/datasets/profiledata_06-May-2005.tar.gz)
 
 
 TODO  
