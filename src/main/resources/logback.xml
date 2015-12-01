@@ -13,7 +13,12 @@
         </encoder>
     </appender>
 
-    <root level="info">
+    <logger name="Recommender" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+
+    <root level="warn">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE"/>
     </root>
