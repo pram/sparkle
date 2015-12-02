@@ -1,6 +1,6 @@
 # Sparkle
 
-Spark Related Projects
+Spark Related Projects.
 
 ## To build project
 
