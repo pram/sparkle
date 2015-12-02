@@ -41,6 +41,10 @@ object Recommender {
 
     logger.info(model.userFeatures.mapValues(_.mkString(", ")).first().toString())
 
+    val userID = 4221
+    val recommendations = model.recommendProducts(userID, 1)
+    recommendations.foreach(println)
+
   }
 
   def buildRatings(rawUserArtistData: RDD[String], bArtistAlias: Broadcast[Map[Int,Int]]) = {
