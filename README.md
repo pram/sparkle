@@ -40,6 +40,7 @@ To run recipe search
 Music Recommender
 
 Audioscrobbler datafile downloaded from [here](http://www.iro.umontreal.ca/~lisa/datasets/profiledata_06-May-2005.tar.gz)
+?Command to reduce size of input?
 
 
 TODO  
