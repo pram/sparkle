@@ -7,6 +7,8 @@ import org.apache.spark.{SparkContext, SparkConf}
 import org.slf4j.LoggerFactory
 
 import scala.collection.Map
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 /**
   * Created by pram on 01/12/2015.
@@ -26,8 +28,89 @@ object Recommender {
 
     prepareData(rawUserArtistData, rawArtistData, rawArtistAlias)
     modelData(sc,rawUserArtistData, rawArtistData, rawArtistAlias)
+    evaluate(sc, rawUserArtistData, rawArtistAlias)
 
     sc.stop
+  }
+
+  def evaluate(sc: SparkContext,rawUserArtistData: RDD[String],rawArtistAlias: RDD[String]): Unit = {
+    val bArtistAlias = sc.broadcast(buildArtistAlias(rawArtistAlias))
+    val allData = buildRatings(rawUserArtistData, bArtistAlias)
+
+    val Array(trainData, cvData) = allData.randomSplit(Array(0.9, 0.1))
+    trainData.cache()
+    cvData.cache()
+
+    val allItemIDs = allData.map(_.product).distinct().collect()
+    val bAllItemIDs = sc.broadcast(allItemIDs)
+
+    val mostListenedAUC = areaUnderCurve(cvData, bAllItemIDs, predictMostListened(sc, trainData))
+    logger.info(s"mostListenedAUC $mostListenedAUC")
+  }
+
+  def predictMostListened(sc: SparkContext, train: RDD[Rating])(allData: RDD[(Int,Int)]) = {
+    val bListenCount = sc.broadcast(train.map(r => (r.product, r.rating)).reduceByKey(_ + _).collectAsMap())
+
+    allData.map { case (user, product) =>
+      Rating(user, product, bListenCount.value.getOrElse(product, 0.0))
+    }
+  }
+
+  def areaUnderCurve(positiveData: RDD[Rating],bAllItemIDs: Broadcast[Array[Int]],predictFunction: (RDD[(Int,Int)] => RDD[Rating])) = {
+
+    val positiveUserProducts = positiveData.map(r => (r.user, r.product))
+
+    val positivePredictions = predictFunction(positiveUserProducts).groupBy(_.user)
+
+    val negativeUserProducts = positiveUserProducts.groupByKey().mapPartitions {
+      // mapPartitions operates on many (user,positive-items) pairs at once
+      userIDAndPosItemIDs => {
+        // Init an RNG and the item IDs set once for partition
+        val random = new Random()
+        val allItemIDs = bAllItemIDs.value
+        userIDAndPosItemIDs.map { case (userID, posItemIDs) =>
+          val posItemIDSet = posItemIDs.toSet
+          val negative = new ArrayBuffer[Int]()
+          var i = 0
+          // Keep about as many negative examples per user as positive.
+          // Duplicates are OK
+          while (i < allItemIDs.size && negative.size < posItemIDSet.size) {
+            val itemID = allItemIDs(random.nextInt(allItemIDs.size))
+            if (!posItemIDSet.contains(itemID)) {
+              negative += itemID
+            }
+            i += 1
+          }
+          // Result is a collection of (user,negative-item) tuples
+          negative.map(itemID => (userID, itemID))
+        }
+      }
+    }.flatMap(t => t)
+    // flatMap breaks the collections above down into one big set of tuples
+
+    // Make predictions on the rest:
+    val negativePredictions = predictFunction(negativeUserProducts).groupBy(_.user)
+
+    // Join positive and negative by user
+    positivePredictions.join(negativePredictions).values.map {
+      case (positiveRatings, negativeRatings) =>
+        // AUC may be viewed as the probability that a random positive item scores
+        // higher than a random negative one. Here the proportion of all positive-negative
+        // pairs that are correctly ranked is computed. The result is equal to the AUC metric.
+        var correct = 0L
+        var total = 0L
+        // For each pairing,
+        for (positive <- positiveRatings;
+             negative <- negativeRatings) {
+          // Count the correctly-ranked pairs
+          if (positive.rating > negative.rating) {
+            correct += 1
+          }
+          total += 1
+        }
+        // Return AUC: fraction of pairs ranked correctly
+        correct.toDouble / total
+    }.mean() // Return mean AUC over users
   }
 
   def modelData(sc: SparkContext, rawUserArtistData: RDD[String], rawArtistData: RDD[String], rawArtistAlias: RDD[String]) = {
@@ -41,10 +124,38 @@ object Recommender {
 
     logger.info(model.userFeatures.mapValues(_.mkString(", ")).first().toString())
 
-    val userID = 4221
+    val userID = 1005491
     val recommendations = model.recommendProducts(userID, 1)
-    recommendations.foreach(println)
+    recommendations.foreach{ i =>
+      logger.info(s"Recommendations $i")
+    }
 
+    val recommendedProductIDs = recommendations.map(_.product).toSet
+
+    val rawArtistsForUser = rawUserArtistData.map(_.split(' ')).filter {
+      case Array(user,_,_) => user.toInt == userID
+    }
+
+    val existingProducts = rawArtistsForUser.map {
+      case Array(_,artist,_) => artist.toInt
+    }.collect().toSet
+
+    val artistByID = buildArtistByID(rawArtistData)
+
+    artistByID.filter { case (id, name) => existingProducts.contains(id) }.values.collect().foreach{ i =>
+      logger.info(s"existing $i")
+    }
+    artistByID.filter { case (id, name) => recommendedProductIDs.contains(id) }.values.collect().foreach{ i =>
+      logger.info(s"Recommended Product Ids $i")
+    }
+
+    unpersist(model)
+
+  }
+
+  def unpersist(model: MatrixFactorizationModel): Unit = {
+    model.userFeatures.unpersist()
+    model.productFeatures.unpersist()
   }
 
   def buildRatings(rawUserArtistData: RDD[String], bArtistAlias: Broadcast[Map[Int,Int]]) = {
