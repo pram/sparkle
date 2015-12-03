@@ -17,6 +17,8 @@ object Recommender {
 
   val logger = LoggerFactory.getLogger("Recommender")
 
+  val USER_ID  = 1005491
+
   def main(args: Array[String]): Unit = {
     val sc = new SparkContext("local", "Recommender", new SparkConf().setAppName("Recommender"))
 
@@ -29,8 +31,38 @@ object Recommender {
     prepareData(rawUserArtistData, rawArtistData, rawArtistAlias)
     modelData(sc,rawUserArtistData, rawArtistData, rawArtistAlias)
     evaluate(sc, rawUserArtistData, rawArtistAlias)
+    recommend(sc,rawUserArtistData,rawArtistData, rawArtistAlias)
 
     sc.stop
+  }
+
+  def recommend(sc: SparkContext,rawUserArtistData: RDD[String],rawArtistData: RDD[String],rawArtistAlias: RDD[String]): Unit = {
+
+    val bArtistAlias = sc.broadcast(buildArtistAlias(rawArtistAlias))
+    val allData = buildRatings(rawUserArtistData, bArtistAlias).cache()
+    val model = ALS.trainImplicit(allData, 50, 10, 1.0, 40.0)
+    allData.unpersist()
+
+    val userID = USER_ID
+    val recommendations = model.recommendProducts(userID, 5)
+    val recommendedProductIDs = recommendations.map(_.product).toSet
+
+    val artistByID = buildArtistByID(rawArtistData)
+
+    artistByID.filter { case (id, name) => recommendedProductIDs.contains(id) }.
+      values.collect().foreach{ i =>
+      logger.info(s"recIds $i")
+    }
+
+    val someUsers = allData.map(_.user).distinct().take(100)
+    val someRecommendations = someUsers.map(userID => model.recommendProducts(userID, 5))
+    someRecommendations.map(
+      recs => recs.head.user + " -> " + recs.map(_.product).mkString(", ")
+    ).foreach{ i =>
+      logger.info(s"recs $i")
+    }
+
+    unpersist(model)
   }
 
   def evaluate(sc: SparkContext,rawUserArtistData: RDD[String],rawArtistAlias: RDD[String]): Unit = {
@@ -46,6 +78,25 @@ object Recommender {
 
     val mostListenedAUC = areaUnderCurve(cvData, bAllItemIDs, predictMostListened(sc, trainData))
     logger.info(s"mostListenedAUC $mostListenedAUC")
+
+    val evaluations =
+      for (rank <- Array(10, 50);
+           lambda <- Array(1.0, 0.0001);
+           alpha <- Array(1.0, 40.0))
+        yield {
+          val model = ALS.trainImplicit(trainData, rank, 10, lambda, alpha)
+          val auc = areaUnderCurve(cvData, bAllItemIDs, model.predict)
+          unpersist(model)
+          ((rank, lambda, alpha), auc)
+        }
+
+    evaluations.sortBy(_._2).reverse.foreach{ i =>
+      logger.info(s"evaluations $i")
+    }
+
+    trainData.unpersist()
+    cvData.unpersist()
+    logger.info("End Evaluation")
   }
 
   def predictMostListened(sc: SparkContext, train: RDD[Rating])(allData: RDD[(Int,Int)]) = {
@@ -124,8 +175,8 @@ object Recommender {
 
     logger.info(model.userFeatures.mapValues(_.mkString(", ")).first().toString())
 
-    val userID = 1005491
-    val recommendations = model.recommendProducts(userID, 1)
+    val userID = USER_ID
+    val recommendations = model.recommendProducts(userID, 5)
     recommendations.foreach{ i =>
       logger.info(s"Recommendations $i")
     }
