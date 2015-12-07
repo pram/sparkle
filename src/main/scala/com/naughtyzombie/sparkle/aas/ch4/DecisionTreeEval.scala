@@ -1,14 +1,13 @@
 package com.naughtyzombie.sparkle.aas.ch4
 
+import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.mllib.tree.model.DecisionTreeModel
+import org.apache.spark.mllib.tree.{DecisionTree, RandomForest}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.LoggerFactory
-
-import org.apache.spark.mllib.tree.{RandomForest, DecisionTree}
-import org.apache.spark.mllib.tree.model.DecisionTreeModel
-import org.apache.spark.mllib.evaluation.MulticlassMetrics
 
 /**
   * Created by pram on 07/12/2015.
@@ -54,8 +53,8 @@ object DecisionTreeEval {
 
     val metrics = getMetrics(model, cvData)
 
-    println(metrics.confusionMatrix)
-    println(metrics.precision)
+    logger.info(s"Confusion Matrix ${metrics.confusionMatrix}")
+    logger.info(s"Metrics Precision ${metrics.precision}" )
 
     (0 until 7).map(
       category => (metrics.precision(category), metrics.recall(category))
@@ -88,28 +87,97 @@ object DecisionTreeEval {
     counts.map(_.toDouble / counts.sum)
   }
 
-  def evaluate(
-                trainData: RDD[LabeledPoint],
-                cvData: RDD[LabeledPoint],
-                testData: RDD[LabeledPoint]): Unit = {
+  def evaluate(trainData: RDD[LabeledPoint],cvData: RDD[LabeledPoint],testData: RDD[LabeledPoint]): Unit = {
 
     val evaluations =
       for (impurity <- Array("gini", "entropy");
            depth    <- Array(1, 20);
            bins     <- Array(10, 300))
         yield {
-          val model = DecisionTree.trainClassifier(
-            trainData, 7, Map[Int,Int](), impurity, depth, bins)
+          val model = DecisionTree.trainClassifier(trainData, 7, Map[Int,Int](), impurity, depth, bins)
           val accuracy = getMetrics(model, cvData).precision
           ((impurity, depth, bins), accuracy)
         }
 
-    evaluations.sortBy(_._2).reverse.foreach(println)
+    evaluations.sortBy(_._2).reverse.foreach{ i=>
+      logger.info(s"Evaluations $i")
+    }
 
     val model = DecisionTree.trainClassifier(
       trainData.union(cvData), 7, Map[Int,Int](), "entropy", 20, 300)
-    println(getMetrics(model, testData).precision)
-    println(getMetrics(model, trainData.union(cvData)).precision)
+    logger.info(s"Get Metrics Precision ${getMetrics(model, testData).precision}")
+    logger.info(s"Get Metrics Precision Trained ${getMetrics(model, trainData.union(cvData)).precision}")
+  }
+
+  def evaluateCategorical(rawData: RDD[String]): Unit = {
+
+    val data = unencodeOneHot(rawData)
+
+    val Array(trainData, cvData, testData) = data.randomSplit(Array(0.8, 0.1, 0.1))
+    trainData.cache()
+    cvData.cache()
+    testData.cache()
+
+    val evaluations =
+      for (impurity <- Array("gini", "entropy");
+           depth    <- Array(10, 20, 30);
+           bins     <- Array(40, 300))
+        yield {
+          // Specify value count for categorical features 10, 11
+          val model = DecisionTree.trainClassifier(
+            trainData, 7, Map(10 -> 4, 11 -> 40), impurity, depth, bins)
+          val trainAccuracy = getMetrics(model, trainData).precision
+          val cvAccuracy = getMetrics(model, cvData).precision
+          // Return train and CV accuracy
+          ((impurity, depth, bins), (trainAccuracy, cvAccuracy))
+        }
+
+    evaluations.sortBy(_._2._2).reverse.foreach{ i =>
+      logger.info(s"Evaluations Sorted $i")
+    }
+
+    val model = DecisionTree.trainClassifier(
+      trainData.union(cvData), 7, Map(10 -> 4, 11 -> 40), "entropy", 30, 300)
+    logger.info(s"Get Metrics ${getMetrics(model, testData).precision}")
+
+    trainData.unpersist()
+    cvData.unpersist()
+    testData.unpersist()
+  }
+
+  def unencodeOneHot(rawData: RDD[String]): RDD[LabeledPoint] = {
+    rawData.map { line =>
+      val values = line.split(',').map(_.toDouble)
+      // Which of 4 "wilderness" features is 1
+      val wilderness = values.slice(10, 14).indexOf(1.0).toDouble
+      // Similarly for following 40 "soil" features
+      val soil = values.slice(14, 54).indexOf(1.0).toDouble
+      // Add derived features back to first 10
+      val featureVector = Vectors.dense(values.slice(0, 10) :+ wilderness :+ soil)
+      val label = values.last - 1
+      LabeledPoint(label, featureVector)
+    }
+  }
+
+  def evaluateForest(rawData: RDD[String]): Unit = {
+
+    val data = unencodeOneHot(rawData)
+
+    val Array(trainData, cvData) = data.randomSplit(Array(0.9, 0.1))
+    trainData.cache()
+    cvData.cache()
+
+    val forest = RandomForest.trainClassifier(
+      trainData, 7, Map(10 -> 4, 11 -> 40), 20, "auto", "entropy", 30, 300)
+
+    val predictionsAndLabels = cvData.map(example =>
+      (forest.predict(example.features), example.label)
+    )
+    logger.info(s" ${new MulticlassMetrics(predictionsAndLabels).precision}")
+
+    val input = "2709,125,28,67,23,3224,253,207,61,6094,0,29"
+    val vector = Vectors.dense(input.split(',').map(_.toDouble))
+    logger.info(s"Forest Predict ${forest.predict(vector)}")
   }
 
 }
