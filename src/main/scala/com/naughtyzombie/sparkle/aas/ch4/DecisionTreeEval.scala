@@ -14,11 +14,11 @@ import org.slf4j.LoggerFactory
   */
 object DecisionTreeEval {
 
-  val logger = LoggerFactory.getLogger("DecisionTree")
+  val logger = LoggerFactory.getLogger("DecisionTreeEval")
 
   def main(args: Array[String]): Unit = {
 
-    val sc = new SparkContext("local", "DecisionTree", new SparkConf().setAppName("DecisionTree"))
+    val sc = new SparkContext("local", "DecisionTreeEval", new SparkConf().setAppName("DecisionTreeEval"))
     val base = "files_x/covtype/"
 
     val rawData = sc.textFile(base + "covtype.data")
