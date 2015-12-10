@@ -51,5 +51,6 @@ Add machine learning to look for certain types of recipes
 Spark JSON Parsing  
 ?SparkSQL usage?  
 ?Create Graph of Recipes?  
+?neo4j integration?
 Lookup how to connect client to remote cluster    
 setting up remote yarn client - might need to run Cloudera Manager    
