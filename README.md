@@ -6,7 +6,7 @@ Spark Related Projects.
 
 `sbt clean package`
    
-## To run applications
+## Application Information
 
 ### Wordcount
 
