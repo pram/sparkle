@@ -2,7 +2,7 @@
 
 Spark Related Projects.
 
-## To build project
+## Buildng the package
 
 `sbt clean package`
    
